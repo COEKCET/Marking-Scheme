@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Marking Scheme Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream:     #faf7f2;
+  --ivory:     #f2ede4;
+  --white:     #ffffff;
+  --parchment: #ede8df;
+  --border:    #ddd8ce;
+  --border2:   #ccc5b8;
+  --ink:       #1e1b16;
+  --ink2:      #4b4540;
+  --ink3:      #8a837a;
+  --ink4:      #b8b0a5;
+  --teal:      #0d7377;
+  --teal2:     #14a0a5;
+  --teal3:     #c5e8ea;
+  --teal-bg:   #eef8f8;
+  --teal-glow: rgba(13,115,119,0.15);
+  --gold:      #c69c3f;
+  --gold-bg:   #fdf6e8;
+  --red:       #c0392b;
+  --red-bg:    #fdf1f0;
+  --shadow-sm: 0 2px 8px rgba(30,27,22,0.09);
+  --shadow-md: 0 6px 24px rgba(30,27,22,0.11);
+  --shadow-lg: 0 16px 48px rgba(30,27,22,0.14);
+  --shadow-xl: 0 24px 64px rgba(30,27,22,0.18);
+  --r-sm:  8px;
+  --r-md:  14px;
+  --r-lg:  20px;
+  --r-xl:  28px;
+  --ease:  cubic-bezier(0.4, 0, 0.2, 1);
+  --spring:cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t:     0.28s;
+  --ff-display: 'DM Serif Display', Georgia, serif;
+  --ff-body:    'DM Sans', system-ui, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--ff-body);
+  background: var(--cream);
+  min-height: 100vh;
+  color: var(--ink);
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(13,115,119,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(198,156,63,0.05) 0%, transparent 50%);
+  animation: meshShift 12s ease-in-out infinite alternate;
+}
+@keyframes meshShift {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.8; transform: scale(1.04); }
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(30,27,22,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.app {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* ── HEADER ── */
+header {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(250, 247, 242, 0.92);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex; align-items: center; gap: 16px;
+  height: 68px;
+  box-shadow: 0 2px 20px rgba(13,115,119,0.08);
+  animation: headerDrop 0.6s var(--ease) both;
+}
+@keyframes headerDrop {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+.header-logo {
+  width: 42px; height: 42px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  border-radius: var(--r-md);
+  display: grid; place-items: center;
+  font-size: 20px;
+  box-shadow: 0 4px 16px rgba(13,115,119,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.header-title { flex: 1; }
+.header-title h1 {
+  font-family: var(--ff-display);
+  font-size: 1.2rem; color: var(--ink);
+  line-height: 1.2; letter-spacing: -0.01em;
+}
+.header-title p {
+  font-size: 0.72rem; color: var(--ink3);
+  font-weight: 400; letter-spacing: 0.06em;
+  text-transform: uppercase; margin-top: 1px;
+}
+.header-pill {
+  background: linear-gradient(135deg, var(--teal-bg), #e0f4f5);
+  border: 1px solid var(--teal3);
+  color: var(--teal);
+  font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: 20px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(13,115,119,0.12);
+}
+
+/* ── MAIN SELECTOR ── */
+main {
+  flex: 1; padding: 48px 20px 80px;
+  max-width: 640px; margin: 0 auto; width: 100%;
+}
+.enter-1 { animation: riseIn 0.6s var(--ease) 0.15s both; }
+.enter-2 { animation: riseIn 0.6s var(--ease) 0.25s both; }
+.enter-3 { animation: riseIn 0.6s var(--ease) 0.35s both; }
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.eyebrow {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+}
+.eyebrow-dot {
+  width: 6px; height: 6px; background: var(--teal);
+  border-radius: 50%; animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink {
+  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)}
+}
+.eyebrow span {
+  font-size: 0.7rem; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink3);
+}
+.card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-xl); padding: 40px 36px;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.8) inset;
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--teal), var(--teal2), var(--gold));
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+.card-shine {
+  position: absolute; top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(13,115,119,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+.card-title {
+  font-family: var(--ff-display); font-size: 1.55rem;
+  color: var(--ink); letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 6px;
+}
+.card-subtitle {
+  font-size: 0.85rem; color: var(--ink3);
+  font-weight: 400; line-height: 1.5; margin-bottom: 32px;
+}
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media(max-width:500px){ .fields{ grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field-label {
+  font-size: 0.71rem; font-weight: 600; color: var(--ink2);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 6px;
+}
+.field-label .label-dot {
+  width: 5px; height: 5px; background: var(--teal);
+  border-radius: 50%; opacity: 0.6;
+}
+.select-wrap { position: relative; }
+.select-wrap .chevron {
+  position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%); pointer-events: none;
+  color: var(--ink3); transition: transform var(--t) var(--ease), color var(--t);
+}
+.select-wrap:focus-within .chevron {
+  transform: translateY(-50%) rotate(180deg); color: var(--teal);
+}
+select {
+  width: 100%; appearance: none; -webkit-appearance: none;
+  background: var(--cream); border: 1.5px solid var(--border2);
+  border-radius: var(--r-md); color: var(--ink);
+  font-family: var(--ff-body); font-size: 0.92rem; font-weight: 400;
+  padding: 13px 40px 13px 16px; cursor: pointer;
+  transition: border-color var(--t) var(--ease), background var(--t), box-shadow var(--t);
+  outline: none;
+}
+select:focus {
+  border-color: var(--teal); background: var(--white);
+  box-shadow: 0 0 0 3px var(--teal-glow), var(--shadow-sm);
+}
+select:disabled { opacity: 0.4; cursor: not-allowed; }
+select option { background: var(--white); color: var(--ink); }
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 28px 0;
+}
+.status {
+  display: none; padding: 11px 15px; border-radius: var(--r-sm);
+  font-size: 0.84rem; font-weight: 500; line-height: 1.4;
+  margin-bottom: 16px; animation: fadeUp 0.3s var(--ease);
+}
+.status.show { display: block; }
+.status.info { background: var(--teal-bg); border: 1px solid var(--teal3); color: var(--teal); }
+.status.error { background: var(--red-bg); border: 1px solid #f0c0bc; color: var(--red); }
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(6px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.cta-btn {
+  width: 100%; padding: 16px 24px;
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  border: none; border-radius: var(--r-md); color: #fff;
+  font-family: var(--ff-body); font-size: 0.96rem; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+  position: relative; overflow: hidden;
+  transition: transform 0.2s var(--spring), box-shadow 0.2s var(--ease), opacity 0.2s;
+  box-shadow: 0 6px 20px rgba(13,115,119,0.35), 0 2px 6px rgba(13,115,119,0.2);
+  letter-spacing: 0.01em;
+}
+.cta-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent 50%);
+  border-radius: inherit;
+}
+.cta-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(13,115,119,0.4), 0 4px 8px rgba(13,115,119,0.2);
+}
+.cta-btn:active:not(:disabled) { transform: translateY(-1px); }
+.cta-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; box-shadow: none; }
+.cta-btn .btn-icon { font-size: 18px; line-height: 1; }
+.cta-btn .spinner {
+  display: none; width: 18px; height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff;
+  border-radius: 50%; animation: spin 0.6s linear infinite;
+}
+.cta-btn.loading .spinner { display: block; }
+.cta-btn.loading .btn-icon, .cta-btn.loading .btn-label { opacity: 0.5; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.info-note {
+  margin-top: 20px; display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px 16px; background: var(--gold-bg);
+  border: 1px solid #e8d5a0; border-radius: var(--r-md);
+  font-size: 0.8rem; color: var(--ink2); line-height: 1.5;
+}
+.info-note .note-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* ══════════════════════════════════════════════
+   FULLSCREEN VIEWER — PAGE-BY-PAGE
+══════════════════════════════════════════════ */
+.viewer {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  flex-direction: column; background: #1a1a2e;
+  animation: viewerIn 0.4s var(--ease);
+}
+.viewer.open { display: flex; }
+@keyframes viewerIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Top bar */
+.viewer-bar {
+  background: rgba(20, 20, 40, 0.97);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 0 16px; height: 60px;
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  position: relative; z-index: 10;
+}
+.viewer-bar-info { flex: 1; min-width: 0; }
+.viewer-bar-course {
+  font-family: var(--ff-display); font-size: 1rem;
+  color: #fff; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
+}
+.viewer-bar-pages {
+  font-size: 0.7rem; color: rgba(255,255,255,0.5);
+  font-weight: 400; margin-top: 2px; letter-spacing: 0.04em;
+}
+.viewer-controls { display: flex; align-items: center; gap: 8px; }
+
+/* Zoom cluster */
+.zoom-cluster {
+  display: flex; align-items: center;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--r-sm); overflow: hidden;
+}
+.zoom-btn {
+  width: 34px; height: 34px; background: transparent; border: none;
+  color: rgba(255,255,255,0.7); font-size: 1.1rem; font-weight: 300;
+  cursor: pointer; display: grid; place-items: center;
+  transition: background var(--t), color var(--t); line-height: 1;
+}
+.zoom-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.zoom-val {
+  padding: 0 8px; font-size: 0.78rem; font-weight: 600;
+  color: rgba(255,255,255,0.8); min-width: 46px; text-align: center;
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid rgba(255,255,255,0.12);
+  border-right: 1px solid rgba(255,255,255,0.12);
+  line-height: 34px;
+}
+
+/* Close button */
+.close-btn {
+  height: 36px; padding: 0 14px;
+  background: rgba(192,57,43,0.2);
+  border: 1px solid rgba(192,57,43,0.4);
+  color: #ff7b6b; border-radius: var(--r-sm);
+  font-family: var(--ff-body); font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: background var(--t), transform 0.15s var(--spring);
+  white-space: nowrap;
+}
+.close-btn:hover { background: rgba(192,57,43,0.35); transform: translateY(-1px); }
+
+/* ── CANVAS STAGE — full viewport ── */
+.pdf-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  position: relative;
+  background: #12121e;
+}
+
+/* Page canvas wrapper */
+.page-wrap {
+  position: relative;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 60px - 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pageSlide 0.35s var(--ease) both;
+}
+@keyframes pageSlide {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.page-wrap canvas {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 60px - 72px);
+  width: auto;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.page-shield {
+  position: absolute; inset: 0; z-index: 3; cursor: default;
+}
+
+/* ── NAVIGATION BAR ── */
+.nav-bar {
+  flex-shrink: 0;
+  height: 72px;
+  background: rgba(20, 20, 40, 0.97);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 0 20px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+}
+
+.nav-btn {
+  height: 44px;
+  padding: 0 24px;
+  border: none;
+  border-radius: var(--r-md);
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: transform 0.2s var(--spring), box-shadow 0.2s, opacity 0.2s, background 0.2s;
+  letter-spacing: 0.02em;
+}
+.nav-btn.prev {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.nav-btn.prev:hover:not(:disabled) {
+  background: rgba(255,255,255,0.18);
+  transform: translateX(-3px);
+}
+.nav-btn.next {
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(13,115,119,0.4);
+}
+.nav-btn.next:hover:not(:disabled) {
+  transform: translateX(3px);
+  box-shadow: 0 8px 24px rgba(13,115,119,0.5);
+}
+.nav-btn:disabled {
+  opacity: 0.25; cursor: not-allowed; transform: none !important;
+}
+.nav-btn svg { width: 16px; height: 16px; }
+
+/* Page counter */
+.page-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+}
+.page-counter .current-page {
+  font-family: var(--ff-display);
+  font-size: 1.4rem;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.page-counter .page-total {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Progress dots */
+.page-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+}
+.page-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  transition: background 0.2s, transform 0.2s;
+}
+.page-dot.active {
+  background: var(--teal2);
+  transform: scale(1.4);
+}
+
+/* ── LOADING STATE ── */
+.loading-state {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 20px;
+  padding: 60px 20px; text-align: center;
+  animation: fadeUp 0.4s var(--ease);
+}
+.loading-ring {
+  width: 56px; height: 56px;
+  border: 3px solid rgba(13,115,119,0.3);
+  border-top-color: var(--teal2);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-state h3 {
+  font-family: var(--ff-display); font-size: 1.1rem;
+  color: rgba(255,255,255,0.8); font-weight: 400;
+}
+.loading-state p { font-size: 0.82rem; color: rgba(255,255,255,0.4); }
+.progress-bar {
+  width: 220px; height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--teal2));
+  border-radius: 2px; width: 0%;
+  transition: width 0.4s var(--ease);
+}
+
+/* ── ERROR STATE ── */
+.error-state {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 12px;
+  padding: 60px 20px; text-align: center;
+}
+.error-state .err-icon { font-size: 40px; }
+.error-state h3 {
+  font-family: var(--ff-display); font-size: 1.1rem; color: #ff7b6b;
+}
+.error-state p {
+  font-size: 0.82rem; color: rgba(255,255,255,0.5);
+  max-width: 300px; line-height: 1.6;
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center; padding: 16px;
+  font-size: 0.7rem; color: var(--ink4);
+  border-top: 1px solid var(--border);
+  background: var(--white); letter-spacing: 0.05em;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--ink); color: #fff;
+  padding: 12px 22px; border-radius: 100px;
+  font-size: 0.84rem; font-weight: 500;
+  z-index: 9999;
+  transition: transform 0.35s var(--spring), opacity 0.3s;
+  opacity: 0; white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(30,27,22,0.25);
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ── MOBILE ── */
+@media(max-width: 480px) {
+  header { padding: 0 16px; }
+  main   { padding: 32px 14px 64px; }
+  .card  { padding: 28px 20px; }
+  .card-title { font-size: 1.3rem; }
+  .viewer-bar { height: 52px; padding: 0 12px; gap: 8px; }
+  .viewer-bar-course { font-size: 0.88rem; }
+  .viewer-bar-pages { display: none; }
+  .zoom-val { min-width: 38px; font-size: 0.72rem; }
+  .zoom-btn { width: 30px; height: 30px; }
+  .close-btn { padding: 0 10px; font-size: 0.78rem; }
+  .nav-bar { height: 64px; gap: 12px; }
+  .nav-btn { height: 40px; padding: 0 16px; font-size: 0.82rem; }
+  .page-counter .current-page { font-size: 1.1rem; }
+  .pdf-stage { background: #0e0e1a; }
+  .page-wrap canvas {
+    max-height: calc(100vh - 52px - 64px);
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- HEADER -->
+  <header>
+    <div class="header-logo">📋</div>
+    <div class="header-title">
+      <h1>Marking Scheme</h1>
+      <p>Official Viewer Portal</p>
+    </div>
+    <div class="header-pill">Secure</div>
+  </header>
+
+  <!-- MAIN CARD -->
+  <main>
+    <div class="eyebrow enter-1">
+      <div class="eyebrow-dot"></div>
+      <span>Select Your Course</span>
+    </div>
+
+    <div class="card enter-2">
+      <div class="card-shine"></div>
+      <h2 class="card-title">Access Marking Scheme</h2>
+      <p class="card-subtitle">Choose your board and course code to securely view the official marking scheme.</p>
+
+      <div class="fields">
+        <div class="field">
+          <div class="field-label"><span class="label-dot"></span>Board</div>
+          <div class="select-wrap">
+            <select id="boardSelect"><option value="">— Loading… —</option></select>
+            <svg class="chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span class="label-dot"></span>Course Code</div>
+          <div class="select-wrap">
+            <select id="courseSelect" disabled><option value="">— Select board —</option></select>
+            <svg class="chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="status" id="statusMsg"></div>
+      <div class="divider"></div>
+
+      <button class="cta-btn" id="viewBtn" disabled>
+        <span class="btn-icon">📄</span>
+        <span class="btn-label">Open Marking Scheme</span>
+        <div class="spinner"></div>
+      </button>
+
+     <!-- <div class="info-note enter-3">
+        <span class="note-icon">🔒</span>
+        <span>PDFs are rendered securely in-browser. Downloading, printing, and copying are disabled.</span>
+      </div>-->
+    </div>
+  </main>
+
+  <footer>Marking Scheme Portal &nbsp;·&nbsp; Secure PDF Viewer &nbsp;·&nbsp; Powered by KCET COE </footer>
+</div>
+
+<!-- ════════════════════════════════════════
+     FULLSCREEN PAGE-BY-PAGE VIEWER
+════════════════════════════════════════ -->
+<div class="viewer" id="viewer">
+
+  <!-- Top toolbar -->
+  <div class="viewer-bar">
+    <div class="viewer-bar-info">
+      <div class="viewer-bar-course" id="vTitle">—</div>
+      <div class="viewer-bar-pages" id="vPages">—</div>
+    </div>
+    <div class="viewer-controls">
+      <div class="zoom-cluster">
+        <button class="zoom-btn" id="zoomOut" title="Zoom out">−</button>
+        <div class="zoom-val" id="zoomVal">100%</div>
+        <button class="zoom-btn" id="zoomIn" title="Zoom in">+</button>
+      </div>
+      <button class="close-btn" id="closeBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- Single page canvas area -->
+  <div class="pdf-stage" id="pdfStage"></div>
+
+  <!-- Bottom navigation -->
+  <div class="nav-bar" id="navBar" style="display:none;">
+    <button class="nav-btn prev" id="prevBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Previous
+    </button>
+    <div class="page-counter">
+      <div class="current-page" id="pageNum">1</div>
+      <div class="page-total" id="pageTotal">of 1</div>
+      <div class="page-dots" id="pageDots"></div>
+    </div>
+    <button class="nav-btn next" id="nextBtn">
+      Next
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+/* ═══ CONFIG ══════════════════════════════ */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxSPU-7H9R6K1RtE4OngA-W1XG89Sio2ntYLtuLHUE0rlzZzQ0q2A0r7_5ClmbmNkKc/exec';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ═══ STATE ═══════════════════════════════ */
+let zoom       = 1.0;
+let pdfDoc     = null;
+let pgStart    = 1, pgEnd = 1;
+let currentPg  = 1;
+let board      = '', course  = '';
+
+/* ═══ DETECT MOBILE ═══════════════════════ */
+function isMobile() {
+  return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+/* ═══ DOM ═════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const boardSel  = $('boardSelect');
+const courseSel = $('courseSelect');
+const viewBtn   = $('viewBtn');
+const statusEl  = $('statusMsg');
+const viewer    = $('viewer');
+const pdfStage  = $('pdfStage');
+const vTitle    = $('vTitle');
+const vPages    = $('vPages');
+const zoomInBtn = $('zoomIn');
+const zoomOutBtn= $('zoomOut');
+const zoomVal   = $('zoomVal');
+const closeBtn  = $('closeBtn');
+const navBar    = $('navBar');
+const prevBtn   = $('prevBtn');
+const nextBtn   = $('nextBtn');
+const pageNum   = $('pageNum');
+const pageTotal = $('pageTotal');
+const pageDots  = $('pageDots');
+const toastEl   = $('toast');
+
+/* ═══ HELPERS ═════════════════════════════ */
+function showStatus(msg, type='info') {
+  statusEl.textContent = msg;
+  statusEl.className   = `status show ${type}`;
+}
+function hideStatus() { statusEl.className = 'status'; }
+
+function showToast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), 2800);
+}
+
+async function gas(params) {
+  const url = GAS_URL + '?' + new URLSearchParams(params);
+  const r   = await fetch(url);
+  return r.json();
+}
+
+function b64ToArr(b64) {
+  const bin = atob(b64), arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+/* ═══ SCALE — fit full page in viewport ══ */
+function calcScale(page) {
+  const vp0  = page.getViewport({ scale: 1 });
+  const avW  = window.innerWidth  - 32;
+  const avH  = window.innerHeight - 60 - 72 - 16;
+  const scW  = avW / vp0.width;
+  const scH  = avH / vp0.height;
+  return Math.min(scW, scH);
+}
+
+/* ═══ PROGRESS BAR ════════════════════════ */
+function setProgress(pct) {
+  const el = document.getElementById('pFill');
+  if (el) el.style.width = pct + '%';
+}
+
+/* ═══ DOTS ════════════════════════════════ */
+function buildDots(total) {
+  pageDots.innerHTML = '';
+  const show = Math.min(total, 10);
+  for (let i = 0; i < show; i++) {
+    const d = document.createElement('div');
+    d.className = 'page-dot';
+    pageDots.appendChild(d);
+  }
+}
+
+function updateDots(index) {
+  const dots = pageDots.querySelectorAll('.page-dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i === index));
+}
+
+function updateNav() {
+  const total  = pgEnd - pgStart + 1;
+  const index  = currentPg - pgStart;
+
+  pageNum.textContent   = index + 1;
+  pageTotal.textContent = `of ${total}`;
+  updateDots(index);
+
+  prevBtn.disabled = currentPg <= pgStart;
+  nextBtn.disabled = currentPg >= pgEnd;
+}
+
+/* ═══ RENDER SINGLE PAGE ══════════════════ */
+async function renderPage(num) {
+  pdfStage.innerHTML = '';
+
+  const page  = await pdfDoc.getPage(num);
+  const scale = calcScale(page);
+  const vp    = page.getViewport({ scale });
+
+  const wrap    = document.createElement('div');
+  wrap.className = 'page-wrap';
+
+  const canvas  = document.createElement('canvas');
+  canvas.width  = vp.width;
+  canvas.height = vp.height;
+
+  const shield  = document.createElement('div');
+  shield.className = 'page-shield';
+  shield.addEventListener('contextmenu', e => e.preventDefault());
+  shield.addEventListener('dragstart',   e => e.preventDefault());
+
+  wrap.appendChild(canvas);
+  wrap.appendChild(shield);
+  pdfStage.appendChild(wrap);
+
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  updateNav();
+}
+
+/* ═══ RE-RENDER CURRENT (zoom) ════════════ */
+async function reRenderCurrent() {
+  pdfStage.innerHTML = '';
+
+  const page  = await pdfDoc.getPage(currentPg);
+  const baseScale = calcScale(page);
+  const scale = baseScale * zoom;
+  const vp    = page.getViewport({ scale });
+
+  const wrap    = document.createElement('div');
+  wrap.className = 'page-wrap';
+
+  const canvas  = document.createElement('canvas');
+  canvas.width  = vp.width;
+  canvas.height = vp.height;
+
+  const shield  = document.createElement('div');
+  shield.className = 'page-shield';
+  shield.addEventListener('contextmenu', e => e.preventDefault());
+  shield.addEventListener('dragstart',   e => e.preventDefault());
+
+  wrap.appendChild(canvas);
+  wrap.appendChild(shield);
+  pdfStage.appendChild(wrap);
+
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  updateNav();
+}
+
+/* ═══ KEYBOARD ════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (['s','p','u'].includes(e.key.toLowerCase()) && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault(); showToast('🔒 Saving is disabled');
+  }
+  if (e.key === 'Escape' && viewer.classList.contains('open')) closeViewer();
+  if (!viewer.classList.contains('open')) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goNext();
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goPrev();
+});
+document.addEventListener('contextmenu', e => {
+  if (viewer.classList.contains('open')) e.preventDefault();
+});
+
+/* ═══ NAVIGATION ══════════════════════════ */
+function goNext() {
+  if (currentPg < pgEnd) { currentPg++; renderPage(currentPg); }
+}
+function goPrev() {
+  if (currentPg > pgStart) { currentPg--; renderPage(currentPg); }
+}
+nextBtn.addEventListener('click', goNext);
+prevBtn.addEventListener('click', goPrev);
+
+/* Swipe gesture */
+let touchStartX = 0;
+pdfStage.addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].clientX;
+}, { passive: true });
+pdfStage.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 50) {
+    if (dx < 0) goNext(); else goPrev();
+  }
+}, { passive: true });
+
+/* ═══ LOAD BOARDS ═════════════════════════ */
+async function init() {
+  try {
+    const d = await gas({ action: 'getBoards' });
+    if (!d.success) throw new Error(d.error || 'Failed');
+    boardSel.innerHTML = '<option value="">— Select Board —</option>' +
+      d.boards.map(b => `<option value="${b}">${b}</option>`).join('');
+  } catch(e) {
+    boardSel.innerHTML = '<option value="">Error loading boards</option>';
+    showStatus('⚠️ Cannot connect to server. Check your GAS URL.', 'error');
+  }
+}
+
+/* ═══ BOARD → COURSES ═════════════════════ */
+boardSel.addEventListener('change', async () => {
+  const val = boardSel.value;
+  courseSel.disabled = true;
+  courseSel.innerHTML = '<option value="">— Loading… —</option>';
+  viewBtn.disabled = true; hideStatus();
+  if (!val) { courseSel.innerHTML = '<option value="">— Select board first —</option>'; return; }
+  try {
+    const d = await gas({ action: 'getCourses', board: val });
+    if (!d.success) throw new Error(d.error);
+    courseSel.innerHTML = '<option value="">— Select Course Code —</option>' +
+      d.courses.map(c => `<option value="${c}">${c}</option>`).join('');
+    courseSel.disabled = false;
+  } catch(e) {
+    showStatus('⚠️ ' + e.message, 'error');
+    courseSel.innerHTML = '<option value="">— Error —</option>';
+  }
+});
+
+/* ═══ COURSE → METADATA ═══════════════════ */
+courseSel.addEventListener('change', async () => {
+  const b = boardSel.value, c = courseSel.value;
+  viewBtn.disabled = true; hideStatus();
+  if (!c) return;
+  showStatus('Fetching course details…', 'info');
+  try {
+    const d = await gas({ action: 'getCourseData', board: b, courseCode: c });
+    if (!d.success) throw new Error(d.error);
+    pgStart = d.pageStart; pgEnd = d.pageEnd;
+    board = b; course = c;
+    viewBtn._fid = d.fileId;
+    hideStatus(); viewBtn.disabled = false;
+  } catch(e) {
+    showStatus('⚠️ ' + e.message, 'error');
+  }
+});
+
+/* ═══ OPEN VIEWER ═════════════════════════ */
+viewBtn.addEventListener('click', async () => {
+  if (!viewBtn._fid) return;
+  viewBtn.disabled = true;
+  viewBtn.classList.add('loading');
+
+  viewer.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  navBar.style.display = 'none';
+  vTitle.textContent = `${board} · ${course}`;
+
+  pdfStage.innerHTML = `
+    <div class="loading-state" id="loadingState">
+      <div class="loading-ring"></div>
+      <h3>Fetching marking scheme…</h3>
+      <p>Please wait while we load your PDF</p>
+      <div class="progress-bar"><div class="progress-fill" id="pFill"></div></div>
+    </div>`;
+  setProgress(0);
+
+  try {
+    setProgress(20);
+    const pd = await gas({ action: 'getPdfBase64', fileId: viewBtn._fid });
+    if (!pd.success) throw new Error(pd.error || 'Server could not fetch PDF.');
+
+    setProgress(55);
+    const bytes = b64ToArr(pd.base64);
+    pdfDoc = await pdfjsLib.getDocument({ data: bytes }).promise;
+    setProgress(85);
+
+    const total = pdfDoc.numPages;
+    pgStart = Math.max(1, Math.min(pgStart, total));
+    pgEnd   = Math.max(pgStart, Math.min(pgEnd, total));
+
+    currentPg = pgStart;
+    buildDots(pgEnd - pgStart + 1);
+    navBar.style.display = 'flex';
+
+    // ✅ AUTO-ZOOM FOR MOBILE
+    if (isMobile()) {
+      zoom = 1.5;  // 150% zoom for mobile readability
+      zoomVal.textContent = '150%';
+    }
+
+    setProgress(100);
+    await renderPage(currentPg);
+
+  } catch(e) {
+    navBar.style.display = 'none';
+    pdfStage.innerHTML = `
+      <div class="error-state">
+        <div class="err-icon">⚠️</div>
+        <h3>Could not load PDF</h3>
+        <p>${e.message}<br>Make sure the Drive file is shared as "Anyone with the link can view".</p>
+      </div>`;
+  } finally {
+    viewBtn.disabled = false;
+    viewBtn.classList.remove('loading');
+  }
+});
+
+/* ═══ ZOOM ════════════════════════════════ */
+zoomInBtn.addEventListener('click', async () => {
+  if (zoom >= 3 || !pdfDoc) return;
+  zoom = Math.min(3, +(zoom + 0.25).toFixed(2));
+  zoomVal.textContent = Math.round(zoom * 100) + '%';
+  await reRenderCurrent();
+});
+zoomOutBtn.addEventListener('click', async () => {
+  if (zoom <= 0.5 || !pdfDoc) return;
+  zoom = Math.max(0.5, +(zoom - 0.25).toFixed(2));
+  zoomVal.textContent = Math.round(zoom * 100) + '%';
+  await reRenderCurrent();
+});
+
+/* Resize → re-render */
+window.addEventListener('resize', () => {
+  if (pdfDoc && viewer.classList.contains('open')) reRenderCurrent();
+});
+
+/* ═══ CLOSE ═══════════════════════════════ */
+closeBtn.addEventListener('click', closeViewer);
+function closeViewer() {
+  viewer.classList.remove('open');
+  document.body.style.overflow = '';
+  navBar.style.display = 'none';
+  zoom = 1.0; zoomVal.textContent = '100%';
+  setTimeout(() => {
+    pdfStage.innerHTML = '';
+    pdfDoc = null;
+  }, 400);
+}
+
+/* ═══ INIT ════════════════════════════════ */
+init();
+</script>
+</body>
+</html>
